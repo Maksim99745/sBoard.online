@@ -99,3 +99,7 @@ export function addRandomShape(container: Container): Graphics {
 
   return g;
 }
+
+export function clearScene(container: Container): void {
+  container.removeChildren().forEach((child) => child.destroy({ children: true }));
+}

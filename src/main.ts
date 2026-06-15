@@ -1,6 +1,6 @@
 import './style.css';
 import { createPixiApp } from './app/createPixiApp';
-import { addRandomShape, createDemoScene } from './app/createScene';
+import { addRandomShape, clearScene, createDemoScene } from './app/createScene';
 import { createSkiaRenderer } from './app/skiaRenderer';
 import { bindSkiaPointerEvents } from './app/bindSkiaEvents';
 import { loadCanvasKit } from './skia/loadCanvasKit';
@@ -11,6 +11,7 @@ function buildLayout(): {
   pixiCanvas: HTMLCanvasElement;
   skiaCanvas: HTMLCanvasElement;
   randomBtn: HTMLButtonElement;
+  clearBtn: HTMLButtonElement;
   pdfBtn: HTMLButtonElement;
 } {
   const appRoot = document.querySelector<HTMLDivElement>('#app')!;
@@ -18,6 +19,7 @@ function buildLayout(): {
   appRoot.innerHTML = `
     <aside class="sidebar">
       <button class="btn" id="btn-random">Сгенерировать случайную линию/фигуру</button>
+      <button class="btn" id="btn-clear">Очистить сцену</button>
       <button class="btn" id="btn-pdf">Экспорт в PDF</button>
     </aside>
     <section class="canvases">
@@ -38,12 +40,13 @@ function buildLayout(): {
     pixiCanvas: document.querySelector('#pixi-canvas') as HTMLCanvasElement,
     skiaCanvas: document.querySelector('#skia-canvas') as HTMLCanvasElement,
     randomBtn: document.querySelector('#btn-random') as HTMLButtonElement,
+    clearBtn: document.querySelector('#btn-clear') as HTMLButtonElement,
     pdfBtn: document.querySelector('#btn-pdf') as HTMLButtonElement,
   };
 }
 
 async function bootstrap(): Promise<void> {
-  const { pixiCanvas, skiaCanvas, randomBtn, pdfBtn } = buildLayout();
+  const { pixiCanvas, skiaCanvas, randomBtn, clearBtn, pdfBtn } = buildLayout();
 
   const ck = await loadCanvasKit();
   const pixiApp = createPixiApp(pixiCanvas);
@@ -63,6 +66,11 @@ async function bootstrap(): Promise<void> {
 
   randomBtn.addEventListener('click', () => {
     addRandomShape(mainContainer);
+    renderScene();
+  });
+
+  clearBtn.addEventListener('click', () => {
+    clearScene(mainContainer);
     renderScene();
   });
 
