@@ -16,6 +16,6 @@
   "dependencies": {
     "@rollerbird/canvaskit-wasm-pdf": "file:node_modules/html2pdf-skia/node_modules/@rollerbird/canvaskit-wasm-pdf",
     "html2pdf-skia": "^0.1.4",
-    "pixi.js-legacy": "^7.2.4"
+    "pixi.js-legacy": "7.2.4"
   }
 }

@@ -2,11 +2,9 @@ import type { Container, DisplayObject } from 'pixi.js-legacy';
 import { canvasPointFromEvent, hitTestDisplayObject } from '../interaction/skiaHitTest';
 
 function emitPointerEvent(target: DisplayObject, type: 'pointerdown' | 'pointerup'): void {
-  // Минимальное синтетическое событие для обработчиков .on()
   target.emit(type, { type, target } as never);
 }
 
-/** Подключает pointerDown / pointerUp на Skia-канвасе через hit-test. */
 export function bindSkiaPointerEvents(
   canvas: HTMLCanvasElement,
   root: Container,

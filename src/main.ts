@@ -1,6 +1,6 @@
 import './style.css';
 import { createPixiApp } from './app/createPixiApp';
-import { addRandomShape, createDemoScene, preloadAssets } from './app/createScene';
+import { addRandomShape, createDemoScene } from './app/createScene';
 import { createSkiaRenderer } from './app/skiaRenderer';
 import { bindSkiaPointerEvents } from './app/bindSkiaEvents';
 import { loadCanvasKit } from './skia/loadCanvasKit';
@@ -22,13 +22,13 @@ function buildLayout(): {
     </aside>
     <section class="canvases">
       <article class="canvas-panel">
-        <h2>Канвас1</h2>
-        <p class="subtitle">Pixi.js</p>
+        <h2>Pixi.js</h2>
+        <p class="subtitle">Обычный рендер</p>
         <canvas id="pixi-canvas" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}"></canvas>
       </article>
       <article class="canvas-panel">
-        <h2>Канвас2</h2>
-        <p class="subtitle">Skia</p>
+        <h2>Skia</h2>
+        <p class="subtitle">Через CanvasKit</p>
         <canvas id="skia-canvas" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}"></canvas>
       </article>
     </section>
@@ -44,8 +44,6 @@ function buildLayout(): {
 
 async function bootstrap(): Promise<void> {
   const { pixiCanvas, skiaCanvas, randomBtn, pdfBtn } = buildLayout();
-
-  await preloadAssets();
 
   const ck = await loadCanvasKit();
   const pixiApp = createPixiApp(pixiCanvas);
@@ -69,8 +67,16 @@ async function bootstrap(): Promise<void> {
   });
 
   pdfBtn.addEventListener('click', () => {
-    const bytes = exportSceneToPdf(ck, mainContainer, CANVAS_WIDTH, CANVAS_HEIGHT);
-    downloadPdf(bytes);
+    try {
+      const bytes = exportSceneToPdf(ck, mainContainer, CANVAS_WIDTH, CANVAS_HEIGHT);
+      if (!bytes?.length) {
+        throw new Error('PDF пустой');
+      }
+      downloadPdf(bytes);
+    } catch (error) {
+      console.error('Ошибка экспорта в PDF:', error);
+      window.alert('Не удалось экспортировать сцену в PDF. Подробности в консоли.');
+    }
   });
 }
 

@@ -10,10 +10,6 @@ function containsGlobalPoint(obj: DisplayObject, globalPoint: Point): boolean {
   return bounds.contains(localPoint.x, localPoint.y);
 }
 
-/**
- * Hit-test по дереву DisplayObject (сверху вниз).
- * Работает для Skia-канваса, где нет встроенного interaction manager.
- */
 export function hitTestDisplayObject(
   container: Container,
   globalPoint: Point,

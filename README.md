@@ -1,57 +1,37 @@
-# Pixi.js + Skia (CanvasKit) Demo
+# Pixi + Skia demo
 
-Тестовое задание: рендер `PIXI.Container` через Pixi.js и Skia, экспорт в векторный PDF.
+Небольшой пример для тестового задания: одна и та же сцена рисуется через Pixi.js и через Skia CanvasKit, а потом экспортируется в PDF.
 
-## Стек
-
-- TypeScript + Vite
-- `pixi.js-legacy@7.2.4` с `forceCanvas: true`
-- `@rollerbird/canvaskit-wasm-pdf` — CanvasKit WASM с PDF backend
-
-## Запуск
+## Как запустить
 
 ```bash
 npm install
 npm run dev
 ```
 
-Откройте http://localhost:5173
+После запуска откройте `http://localhost:5173`.
 
-## Сборка
+## Что есть на странице
+
+- слева кнопки управления;
+- первый canvas рисует сцену через Pixi.js;
+- второй canvas рисует тот же `PIXI.Container` через Skia;
+- кнопка "Сгенерировать случайную линию/фигуру" добавляет новый объект, не пересоздавая старую сцену;
+- экспорт сохраняет сцену в PDF: графика остается векторной, спрайты попадают как bitmap.
+
+## Главное по реализации
+
+- проект написан на TypeScript и Vite;
+- используется `pixi.js-legacy@7.2.4` с `forceCanvas: true`;
+- Skia-рендер лежит в `src/skia`;
+- события для второго canvas обрабатываются через простой hit-test в `src/interaction`;
+- `postinstall` копирует `canvaskit-pdf.wasm` в `public`.
+
+## Проверка сборки
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## Функции
-
-- **Канвас 1** — нативный рендер Pixi.js
-- **Канвас 2** — тот же контейнер через обёртку `convertPixiContainerToSkia`
-- **Сгенерировать фигуру** — добавляет случайный `PIXI.Graphics`
-- **Экспорт в PDF** — векторная графика через Skia PDF (спрайты — bitmap)
-
-## Структура
-
-```
-src/
-  app/           — Pixi app, сцена, UI
-  skia/          — обёртка Pixi → Skia, PDF export
-  interaction/   — hit-test для Skia-канваса
-```
-
-## PDF WASM
-
-При `npm install` скрипт `postinstall` копирует `canvaskit-pdf.wasm` в `public/`.
-Сборка основана на [@rollerbird/canvaskit-wasm-pdf](https://www.npmjs.com/package/html2pdf-skia) (Skia с `skia_enable_pdf=true`).
-
-## Деплой
-
-Статический хостинг (GitHub Pages, Vercel, Netlify):
-
-```bash
-npm run build
-# dist/ — готовая сборка
-```
-
-Убедитесь, что `.wasm` отдаётся с `Content-Type: application/wasm`.
+Если выкладывать проект на статический хостинг, важно, чтобы `.wasm` отдавался как `application/wasm`.

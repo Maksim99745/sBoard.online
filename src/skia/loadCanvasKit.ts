@@ -9,10 +9,10 @@ const CanvasKitInit = (
 
 let canvasKitPromise: Promise<CanvasKit> | null = null;
 
-/** Загружает CanvasKit WASM-сборку с поддержкой PDF. */
 export function loadCanvasKit(): Promise<CanvasKit> {
   if (!canvasKitPromise) {
     canvasKitPromise = CanvasKitInit({
+      // postinstall кладёт сюда сборку CanvasKit с PDF backend.
       locateFile: () => `/canvaskit-pdf.wasm`,
     });
   }

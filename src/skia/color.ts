@@ -1,6 +1,5 @@
 import type { CanvasKit } from '@rollerbird/canvaskit-wasm-pdf';
 
-/** Конвертирует цвет Pixi (0xRRGGBB) в Skia Color4f. */
 export function pixiColorToSkia(
   ck: CanvasKit,
   color: number,

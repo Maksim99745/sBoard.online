@@ -3,34 +3,35 @@ import type { CanvasKit, Canvas } from '@rollerbird/canvaskit-wasm-pdf';
 import { renderGraphics } from './graphicsMapper';
 import { renderSprite } from './spriteMapper';
 
-function applyWorldTransform(canvas: Canvas, displayObject: DisplayObject): void {
-  const wt = displayObject.worldTransform;
-  canvas.concat([wt.a, wt.c, wt.tx, wt.b, wt.d, wt.ty, 0, 0, 1]);
+function applyLocalTransform(canvas: Canvas, displayObject: DisplayObject): void {
+  const transform = displayObject.localTransform;
+  canvas.concat([transform.a, transform.c, transform.tx, transform.b, transform.d, transform.ty, 0, 0, 1]);
 }
 
-/**
- * Обёртка: рекурсивно обходит PIXI.Container и рисует дочерние объекты в Skia.
- * Поддерживает translate / rotate / scale через worldTransform.
- */
+function renderDisplayObject(displayObject: DisplayObject, skCanvas: Canvas, ck: CanvasKit): void {
+  if (!displayObject.visible) return;
+
+  skCanvas.save();
+  // Идём по дереву рекурсивно, поэтому применяем именно локальную матрицу.
+  applyLocalTransform(skCanvas, displayObject);
+
+  if (displayObject instanceof Graphics) {
+    renderGraphics(displayObject, skCanvas, ck);
+  } else if (displayObject instanceof Sprite) {
+    renderSprite(displayObject, skCanvas, ck);
+  } else if (displayObject instanceof Container) {
+    for (const child of displayObject.children) {
+      renderDisplayObject(child, skCanvas, ck);
+    }
+  }
+
+  skCanvas.restore();
+}
+
 export function convertPixiContainerToSkia(
   container: Container,
   skCanvas: Canvas,
   ck: CanvasKit,
 ): void {
-  for (const child of container.children) {
-    if (!child.visible) continue;
-
-    skCanvas.save();
-    applyWorldTransform(skCanvas, child);
-
-    if (child instanceof Graphics) {
-      renderGraphics(child, skCanvas, ck);
-    } else if (child instanceof Sprite) {
-      renderSprite(child, skCanvas, ck);
-    } else if (child instanceof Container && !(child instanceof Graphics)) {
-      convertPixiContainerToSkia(child, skCanvas, ck);
-    }
-
-    skCanvas.restore();
-  }
+  renderDisplayObject(container, skCanvas, ck);
 }

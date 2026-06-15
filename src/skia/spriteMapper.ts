@@ -23,13 +23,13 @@ function getSkiaImage(sprite: Sprite, ck: CanvasKit): Image | null {
   return image;
 }
 
-/** Рисует PIXI.Sprite как bitmap в Skia. */
 export function renderSprite(sprite: Sprite, canvas: Canvas, ck: CanvasKit): void {
   const image = getSkiaImage(sprite, ck);
   if (!image) return;
 
-  const width = sprite.width;
-  const height = sprite.height;
+  // Sprite по условию можно оставить bitmap, но трансформации берём от Pixi.
+  const width = sprite.texture.orig.width;
+  const height = sprite.texture.orig.height;
   const anchorX = sprite.anchor.x * width;
   const anchorY = sprite.anchor.y * height;
 
@@ -37,7 +37,7 @@ export function renderSprite(sprite: Sprite, canvas: Canvas, ck: CanvasKit): voi
   paint.setAntiAlias(true);
   paint.setAlphaf(sprite.worldAlpha);
 
-  const src = ck.XYWHRect(0, 0, sprite.texture.orig.width, sprite.texture.orig.height);
+  const src = ck.XYWHRect(0, 0, width, height);
   const dst = ck.XYWHRect(-anchorX, -anchorY, width, height);
 
   canvas.drawImageRect(image, src, dst, paint, false);

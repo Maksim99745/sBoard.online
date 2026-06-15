@@ -1,5 +1,5 @@
 import type { Container } from 'pixi.js-legacy';
-import type { CanvasKit, Surface } from '@rollerbird/canvaskit-wasm-pdf';
+import type { CanvasKit } from '@rollerbird/canvaskit-wasm-pdf';
 import { convertPixiContainerToSkia } from '../skia/PixiSkiaRenderer';
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from './createScene';
 
@@ -8,7 +8,6 @@ export interface SkiaRenderer {
   dispose(): void;
 }
 
-/** Skia-рендерер для второго канваса. */
 export function createSkiaRenderer(
   canvas: HTMLCanvasElement,
   ck: CanvasKit,
@@ -18,20 +17,18 @@ export function createSkiaRenderer(
     throw new Error('Не удалось создать Skia surface');
   }
 
-  let activeSurface: Surface = surface;
-
   return {
     render(container: Container) {
       container.updateTransform();
 
-      const skCanvas = activeSurface.getCanvas();
+      const skCanvas = surface.getCanvas();
       skCanvas.clear(ck.Color4f(0.96, 0.96, 0.96, 1));
       convertPixiContainerToSkia(container, skCanvas, ck);
-      activeSurface.flush();
+      surface.flush();
     },
 
     dispose() {
-      activeSurface.delete();
+      surface.delete();
     },
   };
 }

@@ -1,9 +1,8 @@
 import { Application } from 'pixi.js-legacy';
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from './createScene';
 
-/** Создаёт Pixi Application с CanvasRenderer (forceCanvas). */
 export function createPixiApp(view: HTMLCanvasElement): Application {
-  const app = new Application({
+  return new Application({
     view,
     width: CANVAS_WIDTH,
     height: CANVAS_HEIGHT,
@@ -12,6 +11,4 @@ export function createPixiApp(view: HTMLCanvasElement): Application {
     antialias: true,
     resolution: 1,
   });
-
-  return app;
 }

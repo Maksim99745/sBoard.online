@@ -3,6 +3,9 @@ import type { Graphics } from '@pixi/graphics';
 import type { CanvasKit, Canvas, Paint, Path } from '@rollerbird/canvaskit-wasm-pdf';
 import { pixiColorToSkia } from './color';
 
+type GraphicsData = Graphics['geometry']['graphicsData'][number];
+type SupportedShape = Circle | Ellipse | Polygon | Rectangle | RoundedRectangle;
+
 function makeFillPaint(ck: CanvasKit, color: number, alpha: number): Paint {
   const paint = new ck.Paint();
   paint.setStyle(ck.PaintStyle.Fill);
@@ -32,13 +35,70 @@ function addPolygonToPath(path: Path, points: number[], close: boolean): void {
   }
 }
 
-function drawEllipsePath(ck: CanvasKit, path: Path, shape: Ellipse): void {
-  const left = shape.x - shape.width / 2;
-  const top = shape.y - shape.height / 2;
-  path.addOval(ck.LTRBRect(left, top, left + shape.width, top + shape.height));
+function createPath(ck: CanvasKit, type: number, shape: SupportedShape): Path | null {
+  const path = new ck.Path();
+
+  if (type === SHAPES.POLY) {
+    const polygon = shape as Polygon;
+    addPolygonToPath(path, polygon.points, polygon.closeStroke);
+    return path;
+  }
+
+  if (type === SHAPES.RECT) {
+    const rect = shape as Rectangle;
+    path.addRect(ck.XYWHRect(rect.x, rect.y, rect.width, rect.height));
+    return path;
+  }
+
+  if (type === SHAPES.CIRC) {
+    const circle = shape as Circle;
+    path.addCircle(circle.x, circle.y, circle.radius);
+    return path;
+  }
+
+  if (type === SHAPES.ELIP) {
+    const ellipse = shape as Ellipse;
+    const left = ellipse.x - ellipse.width / 2;
+    const top = ellipse.y - ellipse.height / 2;
+    path.addOval(ck.LTRBRect(left, top, left + ellipse.width, top + ellipse.height));
+    return path;
+  }
+
+  if (type === SHAPES.RREC) {
+    const rect = shape as RoundedRectangle;
+    const skRect = ck.XYWHRect(rect.x, rect.y, rect.width, rect.height);
+    path.addRRect(ck.RRectXY(skRect, rect.radius, rect.radius));
+    return path;
+  }
+
+  path.delete();
+  return null;
 }
 
-/** Рисует PIXI.Graphics на Skia-canvas с учётом мировой матрицы. */
+function drawPathWithStyles(ck: CanvasKit, canvas: Canvas, path: Path, data: GraphicsData, alpha: number): void {
+  const fillStyle = data.fillStyle;
+  const lineStyle = data.lineStyle;
+
+  if (fillStyle.visible) {
+    const paint = makeFillPaint(ck, fillStyle.color | 0, fillStyle.alpha * alpha);
+    canvas.drawPath(path, paint);
+    paint.delete();
+  }
+
+  if (lineStyle.visible) {
+    const paint = makeStrokePaint(ck, lineStyle.color | 0, lineStyle.alpha * alpha, lineStyle.width);
+    canvas.drawPath(path, paint);
+    paint.delete();
+  }
+}
+
+function applyDataMatrix(canvas: Canvas, data: GraphicsData): void {
+  if (!data.matrix) return;
+
+  const matrix = data.matrix;
+  canvas.concat([matrix.a, matrix.c, matrix.tx, matrix.b, matrix.d, matrix.ty, 0, 0, 1]);
+}
+
 export function renderGraphics(
   graphics: Graphics,
   canvas: Canvas,
@@ -48,134 +108,14 @@ export function renderGraphics(
   const graphicsData = graphics.geometry.graphicsData;
 
   for (const data of graphicsData) {
-    const shape = data.shape;
-    const fillStyle = data.fillStyle;
-    const lineStyle = data.lineStyle;
-    const fillColor = data.fillStyle.color | 0;
-    const lineColor = data.lineStyle.color | 0;
+    // В PDF эти Path остаются векторными, в отличие от Sprite.
+    const path = createPath(ck, data.type, data.shape as SupportedShape);
+    if (!path) continue;
 
     canvas.save();
-
-    if (data.matrix) {
-      const m = data.matrix;
-      canvas.concat([m.a, m.c, m.tx, m.b, m.d, m.ty, 0, 0, 1]);
-    }
-
-    if (data.type === SHAPES.POLY) {
-      const polygon = shape as Polygon;
-      const path = new ck.Path();
-      addPolygonToPath(path, polygon.points, polygon.closeStroke);
-
-      if (fillStyle.visible) {
-        const fillPaint = makeFillPaint(ck, fillColor, fillStyle.alpha * worldAlpha);
-        canvas.drawPath(path, fillPaint);
-        fillPaint.delete();
-      }
-
-      if (lineStyle.visible) {
-        const strokePaint = makeStrokePaint(
-          ck,
-          lineColor,
-          lineStyle.alpha * worldAlpha,
-          lineStyle.width,
-        );
-        canvas.drawPath(path, strokePaint);
-        strokePaint.delete();
-      }
-
-      path.delete();
-    } else if (data.type === SHAPES.RECT) {
-      const rect = shape as Rectangle;
-
-      if (fillStyle.visible) {
-        const fillPaint = makeFillPaint(ck, fillColor, fillStyle.alpha * worldAlpha);
-        canvas.drawRect(ck.XYWHRect(rect.x, rect.y, rect.width, rect.height), fillPaint);
-        fillPaint.delete();
-      }
-
-      if (lineStyle.visible) {
-        const strokePaint = makeStrokePaint(
-          ck,
-          lineColor,
-          lineStyle.alpha * worldAlpha,
-          lineStyle.width,
-        );
-        canvas.drawRect(ck.XYWHRect(rect.x, rect.y, rect.width, rect.height), strokePaint);
-        strokePaint.delete();
-      }
-    } else if (data.type === SHAPES.CIRC) {
-      const circle = shape as Circle;
-      const path = new ck.Path();
-      path.addCircle(circle.x, circle.y, circle.radius);
-
-      if (fillStyle.visible) {
-        const fillPaint = makeFillPaint(ck, fillColor, fillStyle.alpha * worldAlpha);
-        canvas.drawPath(path, fillPaint);
-        fillPaint.delete();
-      }
-
-      if (lineStyle.visible) {
-        const strokePaint = makeStrokePaint(
-          ck,
-          lineColor,
-          lineStyle.alpha * worldAlpha,
-          lineStyle.width,
-        );
-        canvas.drawPath(path, strokePaint);
-        strokePaint.delete();
-      }
-
-      path.delete();
-    } else if (data.type === SHAPES.ELIP) {
-      const ellipse = shape as Ellipse;
-      const path = new ck.Path();
-      drawEllipsePath(ck, path, ellipse);
-
-      if (fillStyle.visible) {
-        const fillPaint = makeFillPaint(ck, fillColor, fillStyle.alpha * worldAlpha);
-        canvas.drawPath(path, fillPaint);
-        fillPaint.delete();
-      }
-
-      if (lineStyle.visible) {
-        const strokePaint = makeStrokePaint(
-          ck,
-          lineColor,
-          lineStyle.alpha * worldAlpha,
-          lineStyle.width,
-        );
-        canvas.drawPath(path, strokePaint);
-        strokePaint.delete();
-      }
-
-      path.delete();
-    } else if (data.type === SHAPES.RREC) {
-      const roundRect = shape as RoundedRectangle;
-      const path = new ck.Path();
-      path.addRRect(
-        ck.RRectXY(ck.XYWHRect(roundRect.x, roundRect.y, roundRect.width, roundRect.height), roundRect.radius, roundRect.radius),
-      );
-
-      if (fillStyle.visible) {
-        const fillPaint = makeFillPaint(ck, fillColor, fillStyle.alpha * worldAlpha);
-        canvas.drawPath(path, fillPaint);
-        fillPaint.delete();
-      }
-
-      if (lineStyle.visible) {
-        const strokePaint = makeStrokePaint(
-          ck,
-          lineColor,
-          lineStyle.alpha * worldAlpha,
-          lineStyle.width,
-        );
-        canvas.drawPath(path, strokePaint);
-        strokePaint.delete();
-      }
-
-      path.delete();
-    }
-
+    applyDataMatrix(canvas, data);
+    drawPathWithStyles(ck, canvas, path, data, worldAlpha);
     canvas.restore();
+    path.delete();
   }
 }

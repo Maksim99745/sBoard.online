@@ -1,4 +1,4 @@
-import { Assets, Container, Graphics, Sprite, Texture } from 'pixi.js-legacy';
+import { Container, Graphics, Sprite, Texture } from 'pixi.js-legacy';
 
 export const CANVAS_WIDTH = 640;
 export const CANVAS_HEIGHT = 480;
@@ -32,7 +32,6 @@ function enablePointerEvents(target: Graphics | Sprite, label: string): void {
   });
 }
 
-/** Создаёт демо-сцену из ТЗ + спрайт. */
 export function createDemoScene(): Container {
   const mainContainer = new Container();
   const subContainer = new Container();
@@ -73,7 +72,6 @@ export function createDemoScene(): Container {
   return mainContainer;
 }
 
-/** Добавляет случайную линию или фигуру в контейнер. */
 export function addRandomShape(container: Container): Graphics {
   const g = new Graphics();
   const colors = [0xe63946, 0x2a9d8f, 0xf4a261, 0x457b9d, 0x8338ec];
@@ -100,9 +98,4 @@ export function addRandomShape(container: Container): Graphics {
   container.addChild(g);
 
   return g;
-}
-
-/** Предзагрузка ассетов (заглушка для расширения). */
-export async function preloadAssets(): Promise<void> {
-  await Assets.load([]);
 }
