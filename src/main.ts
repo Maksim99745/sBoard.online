@@ -1,5 +1,4 @@
 import './style.css';
-import { Container } from 'pixi.js-legacy';
 import { createPixiApp } from './app/createPixiApp';
 import { addRandomShape, createDemoScene, preloadAssets } from './app/createScene';
 import { createSkiaRenderer } from './app/skiaRenderer';
@@ -72,13 +71,6 @@ async function bootstrap(): Promise<void> {
   pdfBtn.addEventListener('click', () => {
     const bytes = exportSceneToPdf(ck, mainContainer, CANVAS_WIDTH, CANVAS_HEIGHT);
     downloadPdf(bytes);
-  });
-
-  // Перерисовка Skia при изменении трансформаций через Pixi ticker (на будущее)
-  pixiApp.ticker.add(() => {
-    if ((mainContainer as Container & { _dirty?: boolean })._dirty) {
-      renderScene();
-    }
   });
 }
 
